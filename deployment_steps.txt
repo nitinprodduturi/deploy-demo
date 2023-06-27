@@ -1,0 +1,170 @@
+
+CircleCI is a continuous integration and continuous delivery platform that can be used to implement DevOps practices. The company was founded in September 2011 and has raised $315 million in venture capital funding as of 2021, at a valuation of $1.7 billion. CircleCI is one of the world's most popular CI/CD platforms.
+
+*************************************AWS********************************
+1. Login to AWS console.
+
+2. Create IAM user for deployment
+
+	with specific access
+	1. EC2 access : It is virtual machine
+
+	2. S3 bucket: To store artifact and model in s3 bucket
+
+	3. ECR: Elastic Container registry
+	To save your docker image in aws
+
+	Description: About the deployment
+
+	1. Build docker image of the source code
+	2. Push your docker image to ECR
+	3. Launch Your EC2 
+	4. Pull Your image from ECR in EC2
+	5. Lauch your docker image in EC2
+
+
+
+	Policy:
+	1. AmazonEC2ContainerRegistryFullAccess
+	2. AmazonEC2FullAccess
+	3. AmazonS3FullAccess
+
+3.Create a s3 bukcet in ap-south-1
+	bucket name: scania-sensor-pipeline
+	
+4. ECR repo to store/save docker image
+	566373416292.dkr.ecr.ap-south-1.amazonaws.com/sensor-fault
+	
+5. EC2 machine  Ubuntu  Created
+
+6. Open EC2 and Install docker in EC2 Machine -+[follow AWS CLI]
+	
+
+***********************************************************************************************
+
+
+*********************************************Circle CI******************************************
+Self Hosted Runner Configuration
+
+1. Go to Main circle ci dashboard
+2. Select self-hosted runners and create your resource class.
+3. upon creation of resource class you can use the following API token provided by circleci
+4. Keep it safe somewhere in your system.
+
+
+#Setup Environment variables in Project Settings
+
+AWS_ACCESS_KEY_ID=
+
+AWS_SECRET_ACCESS_KEY=
+
+AWS_REGION=
+
+AWS_ECR_LOGIN_URI=
+
+ECR_REPOSITORY=
+
+MONGO_DB_URL=mongodb+srv://
+
+
+
+
+***************************************************************************************
+
+
+
+***************************In AWS CLI**************************************************
+
+# Setup Docker and update system
+	#optional
+	sudo apt-get update -y
+	sudo apt-get upgrade
+	
+	#required
+	curl -fsSL https://get.docker.com -o get-docker.sh
+	sudo sh get-docker.sh
+	
+
+# To install docker compose
+sudo apt install docker-compose
+
+# Add cloud user to docker group
+sudo usermod -aG docker ubuntu
+newgrp docker
+
+*******************Start configuration of self-hosted machine***********************
+# Download the launch agent binary and verify the checksum
+mkdir configurations
+cd configurations
+curl https://raw.githubusercontent.com/CircleCI-Public/runner-installation-files/main/download-launch-agent.sh > download-launch-agent.sh
+export platform=linux/amd64 && sh ./download-launch-agent.sh
+
+# Create the circleci user & working directory
+id -u circleci &>/dev/null || sudo adduser --disabled-password --gecos GECOS circleci
+sudo mkdir -p /var/opt/circleci
+sudo chmod 0750 /var/opt/circleci
+sudo chown -R circleci /var/opt/circleci /opt/circleci/circleci-launch-agent
+
+# Create a CircleCI runner configuration
+sudo mkdir -p /etc/opt/circleci
+sudo touch /etc/opt/circleci/launch-agent-config.yaml
+sudo nano /etc/opt/circleci/launch-agent-config.yaml
+
+# Add API(from CircleCI) in the file and change permissions
+
+    # api:
+    #   auth_token: AUTH_TOKEN
+
+    # runner:
+    #   name: RUNNER_NAME
+    #   working_directory: /var/opt/circleci/workdir
+    #   cleanup_working_directory: true
+
+sudo chown circleci: /etc/opt/circleci/launch-agent-config.yaml
+sudo chmod 600 /etc/opt/circleci/launch-agent-config.yaml
+
+# Enable the systemd unit
+sudo touch /usr/lib/systemd/system/circleci.service
+sudo nano /usr/lib/systemd/system/circleci.service
+
+#Put Content in the circleci.service
+    # [Unit]
+    # Description=CircleCI Runner
+    # After=network.target
+    # [Service]
+    # ExecStart=/opt/circleci/circleci-launch-agent --config /etc/opt/circleci/launch-agent-config.yaml
+    # Restart=always
+    # User=circleci
+    # NotifyAccess=exec
+    # TimeoutStopSec=18300
+    # [Install]
+    # WantedBy = multi-user.target
+	
+sudo chown root: /usr/lib/systemd/system/circleci.service
+sudo chmod 644 /usr/lib/systemd/system/circleci.service
+
+# Start CircleCI
+sudo systemctl enable circleci.service
+sudo systemctl start circleci.service
+
+*************************************************************************************
+
+***************Back to AWS CLI*****************************************************
+
+## Add circleci to sudo group
+sudo usermod -aG docker circleci
+newgrp docker
+
+# Setup AWS Cloud
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+[sudo apt-get install unzip] if required
+unzip awscliv2.zip
+sudo ./aws/install
+
+
+#Reboot now
+sudo reboot now
+
+
+
+
