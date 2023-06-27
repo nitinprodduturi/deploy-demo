@@ -8,6 +8,7 @@ from starlette.responses import RedirectResponse
 from uvicorn import run as app_run
 from fastapi.responses import StreamingResponse
 
+#fastapi
 
 app=FastAPI()
 origins=["*"]
