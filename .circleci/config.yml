@@ -18,7 +18,7 @@ jobs:
 
   build-and-push-ecr-image:
     docker:
-      - image: public.ecr.aws/aws-cli/aws-cli:latest
+      - image: ubuntu:latest
     
     environment:
       REPOSITORY: deploy-demo
