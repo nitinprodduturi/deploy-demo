@@ -29,12 +29,6 @@ jobs:
       - checkout
 
       - run:
-          name: Install Utilities
-          command: |
-            apt-get update
-            apt-get install -y jq unzip
-
-      - run:
           name: Configure AWS credentials
           command: |
             echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" >> $BASH_ENV
