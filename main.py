@@ -28,7 +28,7 @@ async def index():
 @app.get("/train")
 async def train_routes():
     try:
-        return {"message": "Hello Nitin"}
+        return {"message": "Hello Nitin, I am updated"}
     except Exception as e:
         return Response(f"Error Occured! {e}")
     
