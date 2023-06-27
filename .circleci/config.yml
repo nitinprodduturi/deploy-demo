@@ -54,7 +54,7 @@ jobs:
 
   continuous-deployment:
     machine: true
-    resource_class: *self-hosted-resource
+    resource_class: nitinprodduturi/self-hosted
     environment:
       REPOSITORY: deploy-demo
       GAR_IMAGE_NAME: deploy-demo
