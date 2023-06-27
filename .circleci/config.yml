@@ -97,6 +97,12 @@ workflows:
       - build-and-push-ecr-image:
           requires:
             - integration
+      - sanity-check:
+          type: approval
+          requires:
+            - build-and-push-ecr-image
       - continuous-deployment:
           requires:
+            - sanity-check
+            - integration
             - build-and-push-ecr-image
