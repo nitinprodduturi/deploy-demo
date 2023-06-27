@@ -1,0 +1,104 @@
+version: 2.1
+
+jobs:
+  integration:
+    docker:
+      - image: ubuntu:latest
+
+    steps:
+      - checkout
+
+      - run:
+          name: Lint code
+          command: echo "Linting repository"
+
+      - run:
+          name: Run unit tests
+          command: echo "Running unit tests"
+
+  build-and-push-ecr-image:
+    docker:
+      - image: ubuntu:latest
+    
+    environment:
+      REPOSITORY: deploy-demo
+      IMAGE_NAME: deploy-demo
+      IMAGE_TAG: latest
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install Utilities
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y jq unzip
+
+      - run:
+          name: Configure AWS credentials
+          command: |
+            echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" >> $BASH_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> $BASH_ENV
+            echo "AWS_REGION=${AWS_REGION}" >> $BASH_ENV
+            echo "AWS_ECR_LOGIN_URI=${AWS_ECR_LOGIN_URI}" >> $BASH_ENV
+
+      - run:
+          name: Login to Amazon ECR
+          command: aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ECR_LOGIN_URI
+
+      - run:
+          name: Build, tag, and push image to Amazon ECR
+          command: |
+            docker build -t $AWS_ECR_LOGIN_URI/$ECR_REPOSITORY:latest .
+            docker push $AWS_ECR_LOGIN_URI/$ECR_REPOSITORY:latest
+
+  continuous-deployment:
+    machine: true
+    resource_class: *self-hosted-resource
+    environment:
+      REPOSITORY: deploy-demo
+      GAR_IMAGE_NAME: deploy-demo
+      IMAGE_TAG: latest
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_REGION}
+      MONGO_DB_URL: ${MONGO_DB_URL}
+    steps:
+      - checkout
+
+      - run:
+          name: Configure AWS credentials
+          command: |
+            echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" >> $BASH_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> $BASH_ENV
+            echo "AWS_REGION=${AWS_REGION}" >> $BASH_ENV
+            echo "AWS_ECR_LOGIN_URI=${AWS_ECR_LOGIN_URI}" >> $BASH_ENV
+
+      - run:
+          name: Login to Amazon ECR
+          command: aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ECR_LOGIN_URI
+
+      - run:
+          name: Pull latest images
+          command: docker pull $AWS_ECR_LOGIN_URI/$ECR_REPOSITORY:latest
+
+      - run:
+          name: Run Docker Image to serve users
+          command: |
+            docker run -d -p 80:8080 --name=sensor -e "MONGO_DB_URL=${MONGO_DB_URL}" -e "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" -e "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" -e "AWS_REGION=${AWS_REGION}" $AWS_ECR_LOGIN_URI/$ECR_REPOSITORY:latest
+
+      - run:
+          name: Clean previous images and containers
+          command: docker system prune -f
+
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - integration
+      - build-and-push-ecr-image:
+          requires:
+            - integration
+      - continuous-deployment:
+          requires:
+            - build-and-push-ecr-image
