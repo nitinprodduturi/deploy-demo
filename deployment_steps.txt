@@ -110,7 +110,7 @@ sudo mkdir -p /etc/opt/circleci
 sudo touch /etc/opt/circleci/launch-agent-config.yaml
 sudo nano /etc/opt/circleci/launch-agent-config.yaml
 
-# Add API(from CircleCI) in the file and change permissions
+# Add API(from CircleCI) in the file and change permissions -- [update AUTH_TOKEN and RUNNER_NAME]
 
     # api:
     #   auth_token: AUTH_TOKEN
