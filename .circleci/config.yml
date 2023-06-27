@@ -17,8 +17,8 @@ jobs:
           command: echo "Running unit tests"
 
   build-and-push-ecr-image:
-    docker:
-      - image: ubuntu:latest
+    machine: true
+    resource_class: nitinprodduturi/self-hosted
     
     environment:
       REPOSITORY: deploy-demo
