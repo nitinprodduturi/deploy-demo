@@ -1,0 +1,7 @@
+numpy
+pandas
+pymongo
+fastapi
+dnspython==2.2.1
+pymongo==4.2.0
+uvicorn==0.18.3
