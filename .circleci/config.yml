@@ -77,10 +77,14 @@ jobs:
           command: docker pull $AWS_ECR_LOGIN_URI/$ECR_REPOSITORY:latest
 
       - run:
+          name: Stop and remove container if running
+          command: docker ps -q --filter "name=sensor" | grep -q . && docker stop sensor && docker rm -fv sensor
+
+      - run:
           name: Run Docker Image to serve users
           command: |
             docker run -d -p 80:8080 --name=sensor -e "MONGO_DB_URL=${MONGO_DB_URL}" -e "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" -e "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" -e "AWS_REGION=${AWS_REGION}" $AWS_ECR_LOGIN_URI/$ECR_REPOSITORY:latest
-
+    
       - run:
           name: Clean previous images and containers
           command: docker system prune -f
